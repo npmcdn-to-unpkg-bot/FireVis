@@ -1,0 +1,90 @@
+<!DOCTYPE html >
+<html lang="en">
+  <head>
+    <title>Fires in Indonesia</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
+    <script src="http://gfw2-data.s3.amazonaws.com/test/D3/leaflet-heat.js"></script>
+  </head>
+
+<body>
+  <div id="map-canvas" style="width: 1000px; height: 600px"></div>
+  <p>Select Year<select id="yearSelect"><optgroup label="year" id="ySelect"></optgroup></select></p>
+
+  <script type="text/javascript">
+
+//Basemap
+    var baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYWNoYW1vcnJvIiwiYSI6ImNpcnFub3NuOTBodGtmZ204M2R2MmZobDIifQ.-eJXpRA44j_7MPBXg3z90A', {
+      attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+      maxZoom: 15,
+      id: 'mapbox.achamorro'
+    });
+
+//Conditions for heatmap
+    var options = {
+      // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+      // if scaleRadius is false it will be the constant radius used in pixels
+      "radius": 10,
+      "minOpacity": 0.3,
+      "blur": 18,
+      "max": 1,
+      "gradient": {0.3:'#2b83ba',0.6: '#fdae61', 1:'#d7191c'},
+    };
+
+    var mymap = new L.Map('map-canvas', {
+      center: new L.LatLng(-0.7893, 113.9213),
+      zoom: 4,
+      layers: [baseLayer]
+    });
+
+    var dataset = [];
+    var empty = [];
+    var heatmapLayer = new L.heatLayer(empty,options).addTo(mymap);
+
+//Create an array with data from selected year and set heatmap layer
+    var updateData = function(year) {
+      var selectedData = [];
+      var i = 0;
+      dataset.forEach(function(d) {
+        if (d[2] === year) {
+          selectedData[i] = [d[0],d[1]];
+          i++;
+        }
+      });
+      console.log(selectedData);
+      heatmapLayer.setLatLngs(selectedData);
+    }
+
+    var ymenu = d3.select("#ySelect");
+    for (i = 2010; i < 2016; i++) {
+      ymenu.append("option").attr("value", i).text(i);
+    }
+
+    d3.csv("http://gfw2-data.s3.amazonaws.com/test/D3/master.csv", function(error, data){
+      if (error) {
+        console.log(error);}
+      else {
+        data.forEach(function(d){
+          var array = [];
+          array[0] = +d.latitude;
+          array[1] = +d.longitude;
+          array[2] = d.year;
+          dataset.push(array);
+        })
+      }
+
+      document.getElementById('yearSelect').value = 2015;
+      updateData("2015");
+
+      d3.select("#yearSelect").on("change", function(){
+        updateData(this.value);
+      });
+    });
+
+
+  </script>
+
+</body>
+</html>
